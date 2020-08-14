@@ -1,5 +1,6 @@
 {
   "name": "with-staging-testid-poc",
+  "description": "Higher order component logic to assign default testID & accessibilityLabel props. May or may not be worth it.",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
