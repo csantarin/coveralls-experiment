@@ -1,13 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import whyDidYouRender from '@welldone-software/why-did-you-render';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 
+whyDidYouRender(React, {
+  trackAllPureComponents: true,
+});
+
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <App />,
   document.getElementById('root')
 );
 
