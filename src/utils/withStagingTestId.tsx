@@ -45,7 +45,7 @@ interface StagingTestIdInternalProps<T> {
 	stagingTestIdForwardedRef?: RefObject<T>;
 }
 
-interface StagingTestIdOptions<P> extends StagingTestIdProps {
+interface StagingTestIdOptions<P> {
 	/**
 	 * Prefixes the element's default `testID` with a type during staging testing, e.g. `'button'`, `'textInput'`.
 	 *
