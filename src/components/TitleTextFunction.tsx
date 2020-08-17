@@ -49,9 +49,7 @@ export const TitleTextFunction = forwardRef<TitleTextFunctionHandle, TitleTextFu
 export const TitleTextFunctionTagged = withStagingTestId(TitleTextFunction, {
 	testComponentRole: 'span',
 	testNameAttribute: 'id',
-	forwardRef: true,
-	pure: true,
 });
 
 // Otherwise, we'd get just see "Component" in the React DevTools Component inspector.
-TitleTextFunctionTagged.displayName = 'TitleTextFunction';
+(TitleTextFunctionTagged as React.FunctionComponent<{}>).displayName = 'TitleTextFunction';

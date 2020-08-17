@@ -1,5 +1,5 @@
 import 'react-native';
-import React, { Component, FunctionComponent, memo, PureComponent } from 'react';
+import React, { Component, FunctionComponent, memo, PureComponent, useEffect } from 'react';
 import { Text, TextProps, View } from 'react-native';
 import { render, cleanup } from '@testing-library/react-native';
 
@@ -201,15 +201,10 @@ describe('withStagingTestId', () => {
 			)
 		};
 
-		it('should only rerender wrapped React.Component / React.FunctionComponent when the props have been changed', () => {
-			const updateEvent = jest.fn();
+		it('should be rerendered upon every received update in React.Component', () => {
 			const renderEvent = jest.fn();
 
-			class MockApp extends Component<MockAppProps> {
-				componentDidUpdate() {
-					updateEvent();
-				}
-
+			class MockAppClass extends Component<MockAppProps> {
 				render() {
 					renderEvent();
 
@@ -219,91 +214,51 @@ describe('withStagingTestId', () => {
 				}
 			}
 
-			class PureMockApp extends PureComponent<MockAppProps> {
-				componentDidUpdate() {
-					updateEvent();
-				}
-
-				render() {
-					renderEvent();
-
-					return (
-						<MockAppTemplate {...this.props} />
-					);
-				}
-			}
-
-			const MockAppTagged = withStagingTestId(MockApp, {
+			const MockAppClassTagged = withStagingTestId(MockAppClass, {
 				testComponentRole: 'mock',
 				testNameAttribute: 'mockValue',
-				pure: true,
 			});
 
-			const rendered = render(<MockAppTagged mockValue="Hello World" />);
+			const { rerender } = render(<MockAppClassTagged mockValue="Hello World" />);
 
-			rendered.update(<MockAppTagged mockValue="Hello World" />);
-			rendered.update(<MockAppTagged mockValue="Hello World" />);
-			rendered.update(<MockAppTagged mockValue="Hello World" />);
-			expect(updateEvent).toHaveBeenCalledTimes(0);
+			rerender(<MockAppClassTagged mockValue="Hello World" />);
+			rerender(<MockAppClassTagged mockValue="Hello World" />);
+			rerender(<MockAppClassTagged mockValue="Hello World" />);
+
+			expect(renderEvent).toHaveBeenCalledTimes(4);
 		});
 
-		it('should only rerender wrapped React.PureComponent / React.memo when the props have been changed', () => {
-			const updateEvent = jest.fn();
+		it('should be rerendered upon every received update in React.FunctionComponent', () => {
 			const renderEvent = jest.fn();
-
-			class MockApp extends Component<MockAppProps> {
-				componentDidUpdate() {
-					updateEvent();
-				}
-
-				render() {
-					renderEvent();
-
-					return (
-						<MockAppTemplate {...this.props} />
-					);
-				}
-			}
-
-			class PureMockApp extends PureComponent<MockAppProps> {
-				componentDidUpdate() {
-					updateEvent();
-				}
-
-				render() {
-					renderEvent();
-
-					return (
-						<MockAppTemplate {...this.props} />
-					);
-				}
-			}
-
-			const MockAppTagged = withStagingTestId(PureMockApp, {
+	
+			const MockAppFunction: React.FunctionComponent<MockAppProps> = (props) => {
+				renderEvent();
+	
+				return (
+					<MockAppTemplate {...props} />
+				);
+			};
+	
+			const MockAppTagged = withStagingTestId(MockAppFunction, {
 				testComponentRole: 'mock',
 				testNameAttribute: 'mockValue',
-				pure: true,
 			});
 
-			const rendered = render(<MockAppTagged mockValue="Hello World" />);
+			const { rerender } = render(<MockAppTagged mockValue="Hello World" />);
 
-			rendered.rerender(<MockAppTagged mockValue="Hello World" />);
-			rendered.rerender(<MockAppTagged mockValue="Hello World" />);
-			rendered.rerender(<MockAppTagged mockValue="Hello World" />);
-			expect(updateEvent).toHaveBeenCalledTimes(0);
+			rerender(<MockAppTagged mockValue="Hello World" />);
+			rerender(<MockAppTagged mockValue="Hello World" />);
+			rerender(<MockAppTagged mockValue="Hello World" />);
+
+			expect(renderEvent).toHaveBeenCalledTimes(4);
 		});
 
-		it('2', () => {
-			const updateEvent = jest.fn();
-			const renderEvent = jest.fn();
+		it('should not be rerendered upon every received update if the prev and next props are shallowly equal in React.PureComponent', () => {
+			const renderPureClassEvent = jest.fn();
 
-			class MockApp extends Component<MockAppProps> {
-				componentDidUpdate() {
-					updateEvent();
-				}
-
+			class PureMockAppClass extends PureComponent<MockAppProps> {
 				render() {
-					renderEvent();
+					renderPureClassEvent();
 
 					return (
 						<MockAppTemplate {...this.props} />
@@ -311,34 +266,43 @@ describe('withStagingTestId', () => {
 				}
 			}
 
-			class PureMockApp extends PureComponent<MockAppProps> {
-				componentDidUpdate() {
-					updateEvent();
-				}
-
-				render() {
-					renderEvent();
-
-					return (
-						<MockAppTemplate {...this.props} />
-					);
-				}
-			}
-
-			const MockAppTagged = withStagingTestId(PureMockApp, {
+			const PureMockAppClassTagged = withStagingTestId(PureMockAppClass, {
 				testComponentRole: 'mock',
 				testNameAttribute: 'mockValue',
 			});
 
-			const PureMockAppTagged = memo(MockAppTagged);
+			const { rerender } = render(<PureMockAppClassTagged mockValue="Hello World" />);
 
-			const rendered = render(<PureMockAppTagged mockValue="Hello World" />);
+			rerender(<PureMockAppClassTagged mockValue="Hello World" />);
+			rerender(<PureMockAppClassTagged mockValue="Hello World" />);
+			rerender(<PureMockAppClassTagged mockValue="Hello World" />);
 
-			rendered.rerender(<PureMockAppTagged mockValue="Hello World" />);
-			rendered.rerender(<PureMockAppTagged mockValue="Hello World" />);
-			rendered.rerender(<PureMockAppTagged mockValue="Hello World" />);
-			expect(updateEvent).toHaveBeenCalledTimes(0);
-			expect(renderEvent).toHaveBeenCalledTimes(1);
+			expect(renderPureClassEvent).toHaveBeenCalledTimes(1);
+		});
+
+		it('should not be rerendered upon every received update if the prev and next props are shallowly equal in React.memo(React.FunctionComponent)', () => {
+			const renderPureFunctionEvent = jest.fn();
+	
+			const PureMockAppFunction = React.memo(function PureMockApp(props: MockAppProps) {
+				renderPureFunctionEvent();
+	
+				return (
+					<MockAppTemplate {...props} />
+				);
+			});
+	
+			const PureMockAppFunctionTagged = withStagingTestId(PureMockAppFunction, {
+				testComponentRole: 'mock',
+				testNameAttribute: 'mockValue',
+			});
+	
+			const { rerender } = render(<PureMockAppFunctionTagged mockValue="Hello World" />);
+	
+			rerender(<PureMockAppFunctionTagged mockValue="Hello World" />);
+			rerender(<PureMockAppFunctionTagged mockValue="Hello World" />);
+			rerender(<PureMockAppFunctionTagged mockValue="Hello World" />);
+	
+			expect(renderPureFunctionEvent).toHaveBeenCalledTimes(1);
 		});
 	});
 });

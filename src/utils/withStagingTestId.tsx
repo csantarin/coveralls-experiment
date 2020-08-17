@@ -37,17 +37,9 @@ const getTestNameByKeyFromProps = <P extends {}>(props: P, key?: keyof P | (stri
 
 type RefObject<T> = ((instance: T | null) => void) | React.MutableRefObject<T | null> | null;
 
-type ComponentType<P> = 
-	| React.ComponentType<P>
-	| ((props: P) => React.ReactElement<any>)
-	| ((props: P) => JSX.Element);
-
-type StagingTestIdPropsBase = 
+type StagingTestIdProps = 
 	& Pick<AccessibilityProps, 'accessibilityLabel'>
 	& Pick<ViewProps, 'testID'>;
-
-interface StagingTestIdProps extends StagingTestIdPropsBase {
-}
 
 interface StagingTestIdInternalProps<T> {
 	stagingTestIdForwardedRef?: RefObject<T>;
@@ -57,20 +49,19 @@ interface StagingTestIdOptions<P> extends StagingTestIdProps {
 	/**
 	 * Prefixes the element's default `testID` with a type during staging testing, e.g. `'button'`, `'textInput'`.
 	 *
-	 * Used with the attribute as described in `testNameAttribute` to produce `"<role>-<title>"` when either of the missing props is missing:
+	 * Used with the attribute described in `testNameAttribute` to produce `"<role>-<title>"` when either of the missing props is missing:
 	 * - `testID`
 	 * - `accessibilityLabel`
 	 */
 	testComponentRole?: string | null;
 	/**
-	 * Attribute to use as the name segment of the **default** `testID` when an external `testID` override has not been provided.
+	 * Attribute to use for the name segment of the **default** `testID` when an external `testID` override has not been provided.
 	 *
-	 * Used with the attribute as described in `testNameAttribute` to produce `"<role>-<title>"` when either of the missing props is missing:
+	 * Used with the attribute described in `testNameAttribute` to produce `"<role>-<title>"` when either of the missing props is missing:
 	 * - `testID`
 	 * - `accessibilityLabel`
 	 */
 	testNameAttribute?: keyof P | (string & {});
-	pure?: boolean;
 }
 
 /**
@@ -81,28 +72,26 @@ interface StagingTestIdOptions<P> extends StagingTestIdProps {
  */
 export const withStagingTestId = <
 	P extends {},
-	T extends {},
-	C extends ComponentType<P>,
+	C extends {},
 >(
-	component: C | ComponentType<P & StagingTestIdProps> | React.ForwardRefExoticComponent<P & React.RefAttributes<T>>,
+	WrappedComponent: React.JSXElementConstructor<P> & C,
 	options: StagingTestIdOptions<P> = {},
 ) => {
 	if (!isStaging()) {
-		return component;
+		return WrappedComponent;
 	}
 
-	const Component = component;
-	const componentName = getComponentDisplayName(Component);
 	const {
-		pure,
 		testComponentRole,
 		testNameAttribute,
 	} = options;
-
+	const componentName = getComponentDisplayName(WrappedComponent);
 	const displayName = `WithStagingTestId(${componentName})`;
 
-	// const StagingTestIdFunction: FunctionComponent<P & StagingTestIdProps & StagingTestIdInternalProps<T>> = (props) => {
-	function StagingTestIdFunction(props: P & StagingTestIdProps & StagingTestIdInternalProps<T>) {
+	// Infer props from component.
+	// https://react-typescript-cheatsheet.netlify.app/docs/hoc/react_hoc_docs/
+	type Props = JSX.LibraryManagedAttributes<C, P>;
+	const StagingTestIdFunction: React.FunctionComponent<Props & StagingTestIdProps & StagingTestIdInternalProps<C>> = (props) => {
 		const {
 			stagingTestIdForwardedRef,
 			testID: primaryTestID,
@@ -118,8 +107,8 @@ export const withStagingTestId = <
 		const accessibilityLabel = generateTestId(primaryAccessibilityLabel, testName, testComponentRole);
 
 		return (
-			<Component
-				{...rest as P}
+			<WrappedComponent
+				{...rest as Props}
 				testID={testID}
 				accessibilityLabel={accessibilityLabel}
 				ref={stagingTestIdForwardedRef}
@@ -127,32 +116,25 @@ export const withStagingTestId = <
 		);
 	};
 
-	// Use memoization if required.
-	const StagingTestIdMaybeMemoized = !pure
-		? StagingTestIdFunction
-		: React.memo(StagingTestIdFunction);
-
-
-	(StagingTestIdMaybeMemoized as React.ComponentType<P>).displayName = displayName;
+	StagingTestIdFunction.displayName = displayName;
 
 	// Forward the ref passed to the wrapper down to the wrapped component using a regular
 	// "forwardedRef" prop reserved specifically for the wrapper, if required.
-	const StagingTestIdMaybeMemoizedWithRef = React.forwardRef<T, P>(function forwardStagingTestIdRef(props, ref) {
+	const StagingTestIdWithRef = React.forwardRef<C, Props>(function forwardStagingTestIdRef(props, ref) {
 		return (
-			// @ts-ignore
-			<StagingTestIdMaybeMemoized
+			<StagingTestIdFunction
 				{...props}
 				stagingTestIdForwardedRef={ref}
 			/>
 		);
 	});
 
-	StagingTestIdMaybeMemoizedWithRef.displayName = displayName;
+	StagingTestIdWithRef.displayName = displayName;
 
 	// Copy all of the wrapped component's static methods to the wrapper so that they can
 	// be accessed by consumers just as the wrapped component had originally intended to.
-	const StagingTestId = hoistNonReactStatics(StagingTestIdMaybeMemoizedWithRef, Component);
-	StagingTestIdMaybeMemoizedWithRef.displayName = displayName;
+	const StagingTestId = hoistNonReactStatics(StagingTestIdWithRef, WrappedComponent);
+	StagingTestIdWithRef.displayName = displayName;
 
 	return StagingTestId as any as C;
 };

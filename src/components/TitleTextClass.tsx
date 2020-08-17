@@ -31,6 +31,4 @@ export type TitleTextClassType = TitleTextClass;
 export const TitleTextClassTagged = withStagingTestId(TitleTextClass, {
 	testComponentRole: 'span',
 	testNameAttribute: 'id',
-	forwardRef: true,
-	pure: true,
 });

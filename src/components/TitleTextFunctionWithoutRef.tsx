@@ -23,6 +23,4 @@ export const TitleTextFunctionWithoutRef = (props: TitleTextFunctionProps) => {
 export const TitleTextFunctionWithoutRefTagged = withStagingTestId(TitleTextFunctionWithoutRef, {
 	testComponentRole: 'span',
 	testNameAttribute: 'id',
-	forwardRef: true,
-	pure: true,
 });
