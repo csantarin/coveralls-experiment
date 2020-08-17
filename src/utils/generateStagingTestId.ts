@@ -1,7 +1,5 @@
-import { isBeta, __DEV__ } from 'lib/constants';
-
 /**
- * Generates a test identifier in development and staging environments only.
+ * Generates a test identifier.
  *
  * Returned values:
  *
@@ -10,18 +8,14 @@ import { isBeta, __DEV__ } from 'lib/constants';
  * 3. trimmed `"secondaryId"` if `secondaryId` is nonempty but `elementRole` is empty.
  * 4. `undefined` if both `primaryId` and `secondaryId` are empty.
  *
- * @param {string} [primaryId=''] A name used as the primary means of identifying the element. Takes precedence when not empty.
- * @param {string} [secondaryId=''] Alternate identifier name.
- * @param {string} [elementRole=''] Element role.
+ * @param {string | null} [primaryId=''] A name used as the primary means of identifying the element. Takes precedence when not empty.
+ * @param {string | null} [secondaryId=''] Alternate identifier name.
+ * @param {string | null} [elementRole=''] Element role.
  * @returns {string | undefined} See **Returned values**.
  */
-export const generateStagingTestId = (primaryId: string = '', secondaryId: string = '', elementRole: string = ''): string | undefined => {
-	if (!(__DEV__ || isBeta)) {
-		return;
-	}
-
+export const generateTestId = (primaryId: string | null = '', secondaryId: string | null = '', elementRole: string | null = ''): string | undefined => {
 	// Return nonempty primaryId.
-	if (primaryId.trim().length) {
+	if (typeof primaryId === 'string' && primaryId.trim().length) {
 		return primaryId.replace(/ /g, '');
 	}
 
@@ -29,14 +23,14 @@ export const generateStagingTestId = (primaryId: string = '', secondaryId: strin
 	// Switching to secondaryId...
 
 	// Return undefined when secondaryId is empty.
-	if (!secondaryId.trim().length) {
+	if (secondaryId == null || !secondaryId.trim().length) {
 		return;
 	}
 
 	// Formulate string such that elementRole + secondaryId must be hyphenated and that they have values on both sides.
 	// If there's only a secondaryId value, return the secondaryId only.
 	const testId = [
-		elementRole,
+		elementRole || '',
 		secondaryId,
 	]
 		.map((value) => value.replace(/ /g, ''))
@@ -50,4 +44,4 @@ export const generateStagingTestId = (primaryId: string = '', secondaryId: strin
 	return testId;
 }
 
-export default generateStagingTestId;
+export default generateTestId;

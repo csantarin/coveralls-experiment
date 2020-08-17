@@ -2,7 +2,12 @@ import React from 'react';
 import { ViewProps, AccessibilityProps } from 'react-native';
 import hoistNonReactStatics from 'hoist-non-react-statics';
 
-import { generateStagingTestId } from './generateStagingTestId';
+import { generateTestId } from './generateStagingTestId';
+import { isBeta, __DEV__ } from 'lib/constants';
+
+const isStaging = () => {
+	return __DEV__ || isBeta;
+};
 
 const getComponentDisplayName = (WrappedComponent: React.ComponentType<any>) => {
 	return (
@@ -12,7 +17,7 @@ const getComponentDisplayName = (WrappedComponent: React.ComponentType<any>) => 
 	);
 };
 
-const getSecondaryTestIdFromProps = <P extends {}>(props: P, key?: keyof P | (string & {})) => {
+const getTestNameByKeyFromProps = <P extends {}>(props: P, key?: keyof P | (string & {}), postProcess?: (testName: string) => string) => {
 	if (!key || !key.toString().trim().length) {
 		return;
 	}
@@ -23,7 +28,11 @@ const getSecondaryTestIdFromProps = <P extends {}>(props: P, key?: keyof P | (st
 		return;
 	}
 
-	return value;
+	if (typeof postProcess !== 'function') {
+		return value;
+	}
+
+	return postProcess(value);
 };
 
 type RefObject<T> = ((instance: T | null) => void) | React.MutableRefObject<T | null> | null;
@@ -38,14 +47,6 @@ type StagingTestIdPropsBase =
 	& Pick<ViewProps, 'testID'>;
 
 interface StagingTestIdProps extends StagingTestIdPropsBase {
-	/**
-	 * Annotates the type of element in its `testID` during staging testing.
-	 *
-	 * Used with another attribute such as `title` to produce `"<role>-<title>"` when either of the missing props is missing:
-	 * - `testID`
-	 * - `accessibilityLabel`
-	 */
-	testComponentRole?: string;
 }
 
 interface StagingTestIdInternalProps<T> {
@@ -53,10 +54,23 @@ interface StagingTestIdInternalProps<T> {
 }
 
 interface StagingTestIdOptions<P> extends StagingTestIdProps {
+	/**
+	 * Prefixes the element's default `testID` with a type during staging testing, e.g. `'button'`, `'textInput'`.
+	 *
+	 * Used with the attribute as described in `testNameAttribute` to produce `"<role>-<title>"` when either of the missing props is missing:
+	 * - `testID`
+	 * - `accessibilityLabel`
+	 */
+	testComponentRole?: string | null;
+	/**
+	 * Attribute to use as the name segment of the **default** `testID` when an external `testID` override has not been provided.
+	 *
+	 * Used with the attribute as described in `testNameAttribute` to produce `"<role>-<title>"` when either of the missing props is missing:
+	 * - `testID`
+	 * - `accessibilityLabel`
+	 */
 	testNameAttribute?: keyof P | (string & {});
-	forwardRef?: boolean;
 	pure?: boolean;
-	getDisplayName?: (componentName: string) => string;
 }
 
 /**
@@ -73,29 +87,35 @@ export const withStagingTestId = <
 	component: C | ComponentType<P & StagingTestIdProps> | React.ForwardRefExoticComponent<P & React.RefAttributes<T>>,
 	options: StagingTestIdOptions<P> = {},
 ) => {
+	if (!isStaging()) {
+		return component;
+	}
+
 	const Component = component;
 	const componentName = getComponentDisplayName(Component);
 	const {
 		pure,
-		forwardRef,
-		getDisplayName = (componentName: string) => `WithStagingTestId(${componentName})`,
+		testComponentRole,
+		testNameAttribute,
 	} = options;
 
-	const displayName = getDisplayName(componentName);
+	const displayName = `WithStagingTestId(${componentName})`;
 
 	// const StagingTestIdFunction: FunctionComponent<P & StagingTestIdProps & StagingTestIdInternalProps<T>> = (props) => {
 	function StagingTestIdFunction(props: P & StagingTestIdProps & StagingTestIdInternalProps<T>) {
 		const {
 			stagingTestIdForwardedRef,
-			testComponentRole = options.testComponentRole,
-			testID: _testID,
-			accessibilityLabel: _accessibilityLabel,
+			testID: primaryTestID,
+			accessibilityLabel: primaryAccessibilityLabel,
 			...rest
 		} = props;
 
-		const secondaryTestID = getSecondaryTestIdFromProps(rest as P, options.testNameAttribute);
-		const testID = generateStagingTestId(_testID, secondaryTestID, testComponentRole);
-		const accessibilityLabel = generateStagingTestId(_accessibilityLabel, secondaryTestID, testComponentRole);
+		const testName = getTestNameByKeyFromProps(props, testNameAttribute, (value) => {
+			return value.toLowerCase();
+		});
+	
+		const testID = generateTestId(primaryTestID, testName, testComponentRole);
+		const accessibilityLabel = generateTestId(primaryAccessibilityLabel, testName, testComponentRole);
 
 		return (
 			<Component
@@ -117,24 +137,22 @@ export const withStagingTestId = <
 
 	// Forward the ref passed to the wrapper down to the wrapped component using a regular
 	// "forwardedRef" prop reserved specifically for the wrapper, if required.
-	const StagingTestIdMaybeMemoizedWithRef = !forwardRef
-		? StagingTestIdMaybeMemoized
-		: React.forwardRef<T, P>(function forwardStagingTestIdRef(props, ref) {
-			return (
-				// @ts-ignore
-				<StagingTestIdMaybeMemoized
-					{...props}
-					stagingTestIdForwardedRef={ref}
-				/>
-			);
-		});
+	const StagingTestIdMaybeMemoizedWithRef = React.forwardRef<T, P>(function forwardStagingTestIdRef(props, ref) {
+		return (
+			// @ts-ignore
+			<StagingTestIdMaybeMemoized
+				{...props}
+				stagingTestIdForwardedRef={ref}
+			/>
+		);
+	});
 
-	(StagingTestIdMaybeMemoizedWithRef as React.ComponentType<P>).displayName = displayName;
+	StagingTestIdMaybeMemoizedWithRef.displayName = displayName;
 
 	// Copy all of the wrapped component's static methods to the wrapper so that they can
 	// be accessed by consumers just as the wrapped component had originally intended to.
 	const StagingTestId = hoistNonReactStatics(StagingTestIdMaybeMemoizedWithRef, Component);
-	(StagingTestId as React.ComponentType<P>).displayName = displayName;
+	StagingTestIdMaybeMemoizedWithRef.displayName = displayName;
 
 	return StagingTestId as any as C;
 };
