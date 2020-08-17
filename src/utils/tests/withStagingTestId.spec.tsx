@@ -1,5 +1,5 @@
 import 'react-native';
-import React, { Component, FunctionComponent, memo, PureComponent, useEffect } from 'react';
+import React, { Component, FunctionComponent, memo, PureComponent } from 'react';
 import { Text, TextProps, View } from 'react-native';
 import { render, cleanup } from '@testing-library/react-native';
 
@@ -283,7 +283,7 @@ describe('withStagingTestId', () => {
 		it('should not be rerendered upon every received update if the prev and next props are shallowly equal in React.memo(React.FunctionComponent)', () => {
 			const renderPureFunctionEvent = jest.fn();
 	
-			const PureMockAppFunction = React.memo(function PureMockApp(props: MockAppProps) {
+			const PureMockAppFunction = memo(function PureMockApp(props: MockAppProps) {
 				renderPureFunctionEvent();
 	
 				return (
