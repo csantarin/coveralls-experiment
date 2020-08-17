@@ -2,7 +2,7 @@ import React from 'react';
 import { ViewProps, AccessibilityProps } from 'react-native';
 import hoistNonReactStatics from 'hoist-non-react-statics';
 
-import { generateTestId } from './generateStagingTestId';
+import { generateTestId } from './generateTestId';
 import { isBeta, __DEV__ } from 'lib/constants';
 
 const isStaging = () => {
