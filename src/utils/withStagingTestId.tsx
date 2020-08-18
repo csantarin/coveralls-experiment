@@ -15,7 +15,7 @@ const getTestNameByKeyFromProps = <P extends {}>(props: P, key?: keyof P | (stri
 		return;
 	}
 
-	const value = (props as object)[key as string];
+	const value = (props as any)[key as string];
 
 	if (typeof value !== 'string') {
 		return;
@@ -172,7 +172,7 @@ const withStagingTestId = <
 
 	// Copy all of the wrapped component's static methods to the wrapper so that they can
 	// be accessed by consumers just as the wrapped component had originally intended to.
-	const StagingTestId = hoistNonReactStatics(StagingTestIdWithRef, WrappedComponent as object as WrappableComponent);
+	const StagingTestId = hoistNonReactStatics(StagingTestIdWithRef, WrappedComponent);
 	StagingTestIdWithRef.displayName = displayName;
 
 	return StagingTestId as any as C;
