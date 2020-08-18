@@ -3,7 +3,7 @@ import React, { Component } from "react";
 import { Button, Image, NativeSyntheticEvent, NativeTouchEvent, StyleSheet, Text, View } from 'react-native';
 
 import { Link } from 'Link';
-import { TitleTextClassTagged, TitleTextClassType } from 'components/TitleTextClass';
+import { TitleTextClassTagged, TitleTextClass } from 'components/TitleTextClass';
 import { TitleTextFunctionTagged, TitleTextFunctionHandle } from 'components/TitleTextFunction';
 import { TitleTextFunctionWithoutRefTagged } from 'components/TitleTextFunctionWithoutRef';
 
@@ -11,7 +11,7 @@ const logoUri = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg"
 
 class App extends Component {
 	idTextFunctionTagged = React.createRef<TitleTextFunctionHandle>();
-	idTextClassTagged = React.createRef<TitleTextClassType>();
+	idTextClassTagged = React.createRef<TitleTextClass>();
 
 	handlePress = (event: NativeSyntheticEvent<NativeTouchEvent>) => {
 		this.idTextClassTagged.current?.doSomething();

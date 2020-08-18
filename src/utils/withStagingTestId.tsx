@@ -2,19 +2,12 @@ import React from 'react';
 import { ViewProps, AccessibilityProps } from 'react-native';
 import hoistNonReactStatics from 'hoist-non-react-statics';
 
-import { generateTestId } from './generateTestId';
 import { isBeta, __DEV__ } from 'lib/constants';
+import generateTestId from './generateTestId';
+import getComponentDisplayName from './getComponentDisplayName';
 
 const isStaging = () => {
 	return __DEV__ || isBeta;
-};
-
-const getComponentDisplayName = (WrappedComponent: React.ComponentType<any>) => {
-	return (
-		WrappedComponent.displayName ||
-		WrappedComponent.name ||
-		'Component'
-	);
 };
 
 const getTestNameByKeyFromProps = <P extends {}>(props: P, key?: keyof P | (string & {}), postProcess?: (testName: string) => string) => {
@@ -22,7 +15,7 @@ const getTestNameByKeyFromProps = <P extends {}>(props: P, key?: keyof P | (stri
 		return;
 	}
 
-	const value = (props as any)[key];
+	const value = (props as object)[key as string];
 
 	if (typeof value !== 'string') {
 		return;
@@ -35,9 +28,13 @@ const getTestNameByKeyFromProps = <P extends {}>(props: P, key?: keyof P | (stri
 	return postProcess(value);
 };
 
+const postProcessTestName = (value: string) => {
+	return value.toLowerCase();
+};
+
 type RefObject<T> = ((instance: T | null) => void) | React.MutableRefObject<T | null> | null;
 
-type StagingTestIdProps = 
+type StagingTestIdProps =
 	& Pick<AccessibilityProps, 'accessibilityLabel'>
 	& Pick<ViewProps, 'testID'>;
 
@@ -65,18 +62,67 @@ interface StagingTestIdOptions<P> {
 }
 
 /**
- * Wraps a component with a default `testID` and `accessibilityLabel` using a preferred name attribute from wrapper component's props.
+ * Wraps a component with a default `testID` and `accessibilityLabel` using a preferred name attribute from wrapper component's props in staging environments only.
+ * This wrapper will not be applied to production.
+ *
+ * The resulting format of the default `testID` and `accessibilityLabel` is determined in the order specified in [`generateTestId()`](./generateTestId.ts).
+ *
+ * 	- `primaryId` = a user-defined `testID`
+ * 	- `secondaryId` = an alternate prop which would be used to create part of the default `testID`
+ * 	- `elementRole` = a prefix to set the default `testID` with
+ *
+ * Possible results, in this order of precedence:
+ * 1. trimmed `"primaryId"` is nonempty.
+ * 2. trimmed `"elementRole-secondaryId"` if `elementRole` and `secondaryId` are nonempty.
+ * 3. trimmed `"secondaryId"` if `secondaryId` is nonempty but `elementRole` is empty.
+ * 4. `undefined` if both `primaryId` and `secondaryId` are empty.
  *
  * @param Component The component to enhance with the staging testID algorithm.
  * @param options Additional options to the staging testID component enhancement.
+ * @example
+ *
+ * import React from 'react';
+ * import { View, Text, TextInput, TextInputProps } from 'react-native';
+ * import withStagingTestId from './withStagingTestId';
+ *
+ * interface MyTextInputProps extends TextInputProps {
+ * 	label?: string;
+ * }
+ *
+ * // Components applying the class-based approach should
+ * // be exported also for the sake of React ref typings.
+ * export class MyTextInput extends React.Component<MyTextInputProps> {
+ * 	render() {
+ * 		const { label, ...rest, testID, accessibilityLabel } = this.props;
+ * 		return (
+ * 			<View>
+ * 				<Text>{label}</Text>
+ * 				<TextInput
+ * 					{...rest}
+ * 					// If user-defined `testID` and `accessibilityLabel`
+ * 					// have been provided, they will be used instead.
+ * 					testID={testID}
+ * 					accessibilityLabel={accessibilityLabel}
+ * 				/>
+ * 			</View>
+ * 		);
+ * 	}
+ * }
+ *
+ * // Consumers are expected to use this.
+ * export default withStagingTestId(MyTextInput, {
+ * 	testComponentRole: 'textInput',	// Any role you prefer.
+ * 	testNameAttribute: 'label',		// This prop key will be picked up by IntelliSense.
+ * });
  */
-export const withStagingTestId = <
+const withStagingTestId = <
 	P extends {},
 	C extends {},
 >(
 	WrappedComponent: React.JSXElementConstructor<P> & C,
 	options: StagingTestIdOptions<P> = {},
 ) => {
+	// Don't run wrapping at all if the staging doesn't apply.
 	if (!isStaging()) {
 		return WrappedComponent;
 	}
@@ -85,24 +131,17 @@ export const withStagingTestId = <
 		testComponentRole,
 		testNameAttribute,
 	} = options;
-	const componentName = getComponentDisplayName(WrappedComponent);
+	const componentName = getComponentDisplayName(WrappedComponent as React.ComponentType<any>);
 	const displayName = `WithStagingTestId(${componentName})`;
 
 	// Infer props from component.
 	// https://react-typescript-cheatsheet.netlify.app/docs/hoc/react_hoc_docs/
 	type Props = JSX.LibraryManagedAttributes<C, P>;
+	type WrappableComponent = React.ForwardRefExoticComponent<React.PropsWithoutRef<JSX.LibraryManagedAttributes<C, P>> & React.RefAttributes<C>>;
 	const StagingTestIdFunction: React.FunctionComponent<Props & StagingTestIdProps & StagingTestIdInternalProps<C>> = (props) => {
-		const {
-			stagingTestIdForwardedRef,
-			testID: primaryTestID,
-			accessibilityLabel: primaryAccessibilityLabel,
-			...rest
-		} = props;
+		const { stagingTestIdForwardedRef, testID: primaryTestID, accessibilityLabel: primaryAccessibilityLabel, ...rest } = props;
 
-		const testName = getTestNameByKeyFromProps(props, testNameAttribute, (value) => {
-			return value.toLowerCase();
-		});
-	
+		const testName = getTestNameByKeyFromProps(props, testNameAttribute, postProcessTestName);
 		const testID = generateTestId(primaryTestID, testName, testComponentRole);
 		const accessibilityLabel = generateTestId(primaryAccessibilityLabel, testName, testComponentRole);
 
@@ -133,7 +172,7 @@ export const withStagingTestId = <
 
 	// Copy all of the wrapped component's static methods to the wrapper so that they can
 	// be accessed by consumers just as the wrapped component had originally intended to.
-	const StagingTestId = hoistNonReactStatics(StagingTestIdWithRef, WrappedComponent);
+	const StagingTestId = hoistNonReactStatics(StagingTestIdWithRef, WrappedComponent as object as WrappableComponent);
 	StagingTestIdWithRef.displayName = displayName;
 
 	return StagingTestId as any as C;

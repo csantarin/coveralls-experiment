@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, TextProps } from 'react-native';
 
-import { withStagingTestId } from 'utils/withStagingTestId';
+import withStagingTestId from 'utils/withStagingTestId';
 
 export interface TitleTextFunctionProps extends TextProps {
 	title?: string;

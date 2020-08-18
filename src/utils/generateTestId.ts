@@ -13,7 +13,11 @@
  * @param {string | null} [elementRole=''] Element role.
  * @returns {string | undefined} See **Returned values**.
  */
-export const generateTestId = (primaryId: string | null = '', secondaryId: string | null = '', elementRole: string | null = ''): string | undefined => {
+const generateTestId = (
+	primaryId: string | null = '',
+	secondaryId: string | null = '',
+	elementRole: string | null = '',
+): string | undefined => {
 	// Return nonempty primaryId.
 	if (typeof primaryId === 'string' && primaryId.trim().length) {
 		return primaryId.replace(/ /g, '');
@@ -23,7 +27,7 @@ export const generateTestId = (primaryId: string | null = '', secondaryId: strin
 	// Switching to secondaryId...
 
 	// Return undefined when secondaryId is empty.
-	if (secondaryId == null || !secondaryId.trim().length) {
+	if (!secondaryId || !secondaryId.trim().length) {
 		return;
 	}
 
@@ -42,6 +46,6 @@ export const generateTestId = (primaryId: string | null = '', secondaryId: strin
 	}
 
 	return testId;
-}
+};
 
 export default generateTestId;

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Text, TextProps } from 'react-native';
 
-import { withStagingTestId } from 'utils/withStagingTestId';
+import withStagingTestId from 'utils/withStagingTestId';
 
 export interface TitleTextProps extends TextProps {
 	title?: string;
@@ -25,8 +25,6 @@ export class TitleTextClass extends Component<TitleTextProps> {
 		);
 	}
 }
-
-export type TitleTextClassType = TitleTextClass;
 
 export const TitleTextClassTagged = withStagingTestId(TitleTextClass, {
 	testComponentRole: 'span',

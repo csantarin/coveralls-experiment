@@ -304,5 +304,67 @@ describe('withStagingTestId', () => {
 	
 			expect(renderPureFunctionEvent).toHaveBeenCalledTimes(1);
 		});
+
+		it('should make available all of a class component\'s static methods', () => {
+			class MockAppClass extends Component<MockAppProps> {
+				public static mockMethod1 = jest.fn();
+				public static mockMethod2 = jest.fn();
+				public static mockMethod3 = jest.fn();
+
+				public render() {
+					return (
+						<MockAppTemplate {...this.props} />
+					);
+				}
+			}
+
+			const MockAppClassTagged = withStagingTestId(MockAppClass, {
+				testComponentRole: 'mock',
+				testNameAttribute: 'mockValue',
+			});
+
+			expect(MockAppClassTagged.mockMethod1).toBeDefined();
+			expect(MockAppClassTagged.mockMethod2).toBeDefined();
+			expect(MockAppClassTagged.mockMethod3).toBeDefined();
+
+			MockAppClassTagged.mockMethod1();
+			expect(MockAppClassTagged.mockMethod1).toHaveBeenCalledTimes(1);
+
+			MockAppClassTagged.mockMethod2();
+			expect(MockAppClassTagged.mockMethod2).toHaveBeenCalledTimes(1);
+
+			MockAppClassTagged.mockMethod3();
+			expect(MockAppClassTagged.mockMethod3).toHaveBeenCalledTimes(1);
+		});
+
+		it('should make available all of a function component\'s static methods', () => {
+			function MockAppFunction(props: MockAppProps) {
+				return (
+					<MockAppTemplate {...props} />
+				);
+			}
+
+			MockAppFunction.mockMethod1 = jest.fn();
+			MockAppFunction.mockMethod2 = jest.fn();
+			MockAppFunction.mockMethod3 = jest.fn();
+
+			const MockAppClassTagged = withStagingTestId(MockAppFunction, {
+				testComponentRole: 'mock',
+				testNameAttribute: 'mockValue',
+			});
+
+			expect(MockAppClassTagged.mockMethod1).toBeDefined();
+			expect(MockAppClassTagged.mockMethod2).toBeDefined();
+			expect(MockAppClassTagged.mockMethod3).toBeDefined();
+
+			MockAppClassTagged.mockMethod1();
+			expect(MockAppClassTagged.mockMethod1).toHaveBeenCalledTimes(1);
+
+			MockAppClassTagged.mockMethod2();
+			expect(MockAppClassTagged.mockMethod2).toHaveBeenCalledTimes(1);
+
+			MockAppClassTagged.mockMethod3();
+			expect(MockAppClassTagged.mockMethod3).toHaveBeenCalledTimes(1);
+		});
 	});
 });
