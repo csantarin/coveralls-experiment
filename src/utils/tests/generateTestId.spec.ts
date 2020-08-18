@@ -1,4 +1,4 @@
-import generateTestId from '../generateStagingTestId';
+import generateTestId from '../generateTestId';
 
 describe('generateStagingTestId', () => {
 	it('should exist', () => {
