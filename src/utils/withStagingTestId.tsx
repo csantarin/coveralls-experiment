@@ -117,7 +117,7 @@ interface StagingTestIdOptions<P> {
  */
 const withStagingTestId = <
 	P extends {},
-	C extends {},
+	C extends {} = React.ComponentType | React.JSXElementConstructor<P>,
 >(
 	WrappedComponent: React.JSXElementConstructor<P> & C,
 	options: StagingTestIdOptions<P> = {},
