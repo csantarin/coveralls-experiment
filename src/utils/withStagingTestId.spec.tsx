@@ -3,7 +3,7 @@ import React, { Component, FunctionComponent, memo, PureComponent } from 'react'
 import { Text, TextProps, View } from 'react-native';
 import { render, cleanup } from '@testing-library/react-native';
 
-import withStagingTestId from '../withStagingTestId';
+import { withStagingTestId } from './withStagingTestId';
 
 const updateEvent = jest.fn();
 

@@ -115,7 +115,7 @@ interface StagingTestIdOptions<P> {
  * 	testNameAttribute: 'label',		// This prop key will be picked up by IntelliSense.
  * });
  */
-const withStagingTestId = <
+export const withStagingTestId = <
 	P extends {},
 	C extends {} = React.ComponentType | React.JSXElementConstructor<P>,
 >(
