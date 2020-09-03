@@ -116,10 +116,10 @@ interface StagingTestIdOptions<P> {
  * });
  */
 export const withStagingTestId = <
-	P extends {},
-	C extends {} = React.ComponentType | React.JSXElementConstructor<P>,
+	C extends React.JSXElementConstructor<{}>, // Infer component type from here.
+	P extends React.ComponentProps<C> = React.ComponentProps<C>,
 >(
-	WrappedComponent: React.JSXElementConstructor<P> & C,
+	WrappedComponent: C,
 	options: StagingTestIdOptions<P> = {},
 ) => {
 	// Don't run wrapping at all if the staging doesn't apply.
@@ -131,22 +131,27 @@ export const withStagingTestId = <
 		testComponentRole,
 		testNameAttribute,
 	} = options;
-	const componentName = getComponentDisplayName(WrappedComponent as React.ComponentType<any>);
+	const componentName = getComponentDisplayName(WrappedComponent);
 	const displayName = `WithStagingTestId(${componentName})`;
 
 	// Infer props from component.
 	// https://react-typescript-cheatsheet.netlify.app/docs/hoc/react_hoc_docs/
 	type Props = JSX.LibraryManagedAttributes<C, P>;
-	type WrappableComponent = React.ForwardRefExoticComponent<React.PropsWithoutRef<JSX.LibraryManagedAttributes<C, P>> & React.RefAttributes<C>>;
+	const Component = WrappedComponent as React.JSXElementConstructor<P>;
 	const StagingTestIdFunction: React.FunctionComponent<Props & StagingTestIdProps & StagingTestIdInternalProps<C>> = (props) => {
-		const { stagingTestIdForwardedRef, testID: primaryTestID, accessibilityLabel: primaryAccessibilityLabel, ...rest } = props;
+		const {
+			stagingTestIdForwardedRef,
+			testID: primaryTestID,
+			accessibilityLabel: primaryAccessibilityLabel,
+			...rest
+		} = props;
 
 		const testName = getTestNameByKeyFromProps(props, testNameAttribute, postProcessTestName);
 		const testID = generateTestId(primaryTestID, testName, testComponentRole);
 		const accessibilityLabel = generateTestId(primaryAccessibilityLabel, testName, testComponentRole);
 
 		return (
-			<WrappedComponent
+			<Component
 				{...rest as Props}
 				testID={testID}
 				accessibilityLabel={accessibilityLabel}

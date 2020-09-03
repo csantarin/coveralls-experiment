@@ -4,7 +4,7 @@
  * @param {React.ComponentType<any>} Component The component `function` or `class`.
  * @returns {string} The display name of the component.
  */
-const getComponentDisplayName = (Component: React.ComponentType<{}>): string => {
+const getComponentDisplayName = <C extends React.ComponentType<any>>(Component: C): string => {
 	return (
 		Component.displayName ||
 		Component.name ||
