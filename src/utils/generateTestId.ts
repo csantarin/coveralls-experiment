@@ -39,11 +39,7 @@ const generateTestId = (
 	]
 		.map((value) => value.replace(/ /g, ''))
 		.filter((value): value is string => Boolean(value))
-		.join('-');
-
-	if (!testId) {
-		return;
-	}
+		.join('-') || undefined;
 
 	return testId;
 };

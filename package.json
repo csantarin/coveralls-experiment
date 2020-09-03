@@ -22,6 +22,12 @@
   "eslintConfig": {
     "extends": "react-app"
   },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/(hooks|utils)/*.ts",
+      "!src/(hooks|utils)/index.ts"
+    ]
+  },
   "browserslist": {
     "production": [
       ">0.2%",
