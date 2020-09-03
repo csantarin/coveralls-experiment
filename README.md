@@ -1,5 +1,7 @@
 # With Staging `testID` higher-order component proof-of-concept
 
+[![Coverage Status](https://coveralls.io/repos/github/csantarin/coveralls-experiment/badge.svg?branch=master)](https://coveralls.io/github/csantarin/coveralls-experiment?branch=master)
+
 ## Overview
 
 This source code demonstrates:
