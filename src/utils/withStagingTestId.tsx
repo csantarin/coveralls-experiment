@@ -2,7 +2,7 @@ import React from 'react';
 import { ViewProps, AccessibilityProps } from 'react-native';
 import hoistNonReactStatics from 'hoist-non-react-statics';
 
-import { isBeta, __DEV__ } from '../lib/constants';
+import { isBeta } from '../lib/constants';
 import generateTestId from './generateTestId';
 import getComponentDisplayName from './getComponentDisplayName';
 
@@ -10,7 +10,7 @@ const isStaging = () => {
 	return __DEV__ || isBeta;
 };
 
-const getTestNameByKeyFromProps = <P extends {}>(props: P, key?: keyof P | (string & {}), postProcess?: (testName: string) => string) => {
+export const getTestNameByKeyFromProps = <P extends {}>(props: P, key?: keyof P | (string & {}), postProcess?: (testName: string) => string) => {
 	if (!key || !key.toString().trim().length) {
 		return;
 	}
@@ -28,7 +28,7 @@ const getTestNameByKeyFromProps = <P extends {}>(props: P, key?: keyof P | (stri
 	return postProcess(value);
 };
 
-const postProcessTestName = (value: string) => {
+export const postProcessTestName = (value: string) => {
 	return value.toLowerCase();
 };
 
@@ -123,6 +123,7 @@ export const withStagingTestId = <
 	options: StagingTestIdOptions<P> = {},
 ) => {
 	// Don't run wrapping at all if the staging doesn't apply.
+	/* istanbul ignore next */
 	if (!isStaging()) {
 		return WrappedComponent;
 	}

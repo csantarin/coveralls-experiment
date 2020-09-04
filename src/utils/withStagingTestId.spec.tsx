@@ -4,7 +4,7 @@ import React, { Component, FunctionComponent, memo, PureComponent } from 'react'
 import { Text, TextProps, View } from 'react-native';
 import { render, cleanup } from '@testing-library/react-native';
 
-import { withStagingTestId } from './withStagingTestId';
+import { withStagingTestId, getTestNameByKeyFromProps, postProcessTestName } from './withStagingTestId';
 
 const updateEvent = jest.fn();
 
@@ -14,6 +14,25 @@ describe('withStagingTestId', () => {
 	describe('exported module', () => {
 		it('should exist', () => {
 			expect(withStagingTestId).toBeDefined();
+			expect(getTestNameByKeyFromProps).toBeDefined();
+			expect(postProcessTestName).toBeDefined();
+		});
+	});
+
+	describe('utils', () => {
+		it('should only generate testID when the key exists as a nonfalsy string', () => {
+			expect(getTestNameByKeyFromProps({}, '')).toBeUndefined();
+			expect(getTestNameByKeyFromProps({})).toBeUndefined();
+			expect(getTestNameByKeyFromProps({})).toBeUndefined();
+			expect(getTestNameByKeyFromProps({ value: 123 }, 'value'));
+		});
+
+		it('should return the raw string if no string postprocessing has been provided', () => {
+			const props = { value: 'ABC' };
+			const key: keyof typeof props = 'value';
+			expect(getTestNameByKeyFromProps(props, key)).toBe('ABC');
+			expect(getTestNameByKeyFromProps(props, key, postProcessTestName)).toBe('abc');
+			expect(getTestNameByKeyFromProps(props, key, (testName) => testName + 'DEF')).toBe('ABCDEF');
 		});
 	});
 
