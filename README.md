@@ -4,95 +4,81 @@
 
 ## Overview
 
-This source code demonstrates how to use Coveralls with Bitrise CI/CD in a React.js/React Native app tests.
+This source code demonstrates how to use Coveralls with Bitrise CI/CD in a React.js/React Native app pull requests.
 
 Features originally built from:
 - https://github.com/csantarin/keyboard-aware.git
 - https://github.com/csantarin/with-staging-testid-poc.git
 
-## Usage
+## Setup instructions
+Replace these with your corresponding details:
+- `<GITHUB_USERNAME>`: Your GitHub username
+- `<GITHUB_REPONAME>`: Your GitHub repository name
+- `<REPO_TOKEN_HASH_KEY>`: Your GitHub repository token as seen in your Coveralls dashboard.
 
-1. Fork this repo.
-2. Clone your fork of this repo.
+1. Fork this repo. Alternatively, [create your own React Native app](https://reactnative.dev/docs/environment-setup).
+2. [Add your repo to your Coveralls list.](#adding-your-repo-to-your-coveralls-list)
+3. [Add the Coveralls bot to your repo so that your PRs can receive coverage comments.](#adding-the-coveralls-bot-as-a-collaborator-to-your-repo)
+4. [Add the Coveralls GitHub action to your repo workflow to receive Coveralls build updates.](https://github.com/marketplace/actions/coveralls-github-action)
+   > You can do this by simply copying this sample workflow code in [.github/workflows/main.yml](/.github/workflows/main.yml) if you don't have it yet.
+5. [Add your repo to your Bitrise dashboard for build integration.](#adding-your-repo-to-your-bitrise-dashboard)
+6. [Create a PR (containing some new changes) to your repo.](#creating-a-pr-with-new-commits).
 
-	> Replace `<YOUR_GITHUB_USERNAME>` with... your GitHub username.
+### Adding @coveralls as a collaborator to your repo
+You'll need to integrate the Coveralls bot to your repo in order to receive PR comments on test coverage.
 
-	```bash
-	git clone git@github.com:<YOUR_GITHUB_USERNAME>/coveralls-experiment.git
-	# or
-	git clone https://github.com/<YOUR_GITHUB_USERNAME>/coveralls-experiment.git
-	```
+See also: https://github.com/lemurheavy/coveralls-public/issues/1313#issuecomment-633278912
 
-3. Install its dependencies.
+1. On your repo, go to **Settings > Manage Access**.
+2. Click **Invite a collaborator**.
+3. Enter `coveralls`.
+4. Click **Add coveralls to [your-repo]**.
+5. Wait for the Coveralls bot to accept your invitation within 10 minutes.
 
-	```bash
-	yarn
-	```
+### Adding your repo to your Coveralls list.
+1. Connect to [Coveralls](https://coveralls.io/) using your GitHub account.
+2. [Add your repo to your Coveralls list.](https://coveralls.io/repos/new)
+3. Visit your Coveralls repo settings at `https://coveralls.io/github/<GITHUB_USERNAME>/<GITHUB_REPONAME>/settings`
+4. Enable notifications under **PULL REQUESTS ALERTS**. Set the following:
+   1. **LEAVE COMMENTS?** to `ENABLED`.
+   2. **FORMAT:** to `detailed`.
+   3. **COVERAGE THRESHOLD FOR FAILURE** to a percentage to indicate minimum allowed coverage.
+   4. **COVERAGE DECREASE THRESHOLD FOR FAILURE** to a percentage to indicate minimum allowed loss of coverage.
 
-4. Connect to [Coveralls](https://coveralls.io/) using your GitHub account.
-5. [Add your fork of this repo to your Coveralls list.](https://coveralls.io/repos/new)
-6. Obtain your Coveralls repo token from the repo details view in the Coveralls dashboard.
+### Adding your repo to your Bitrise dashboard.
+As of 2020-09-07, Bitrise cannot trigger the @coveralls bot to produce comments on GitHub PRs. [Coveralls doesn't support Bitrise integration](https://docs.coveralls.io/supported-ci-services), which is why GitHub actions is necessary.
 
-	> Replace `<YOUR_GITHUB_USERNAME>` with... your GitHub username.
+These instructions assume that you use the preconfigured Bitrise workflow without any changes.
 
-	```bash
-	open https://coveralls.io/github/<YOUR_GITHUB_USERNAME>/coveralls-experiment
-	```
+1. Connect to [Bitrise](https://app.bitrise.io/users/sign_in) with your GitHub account.
+2. Follow the steps outlined in [this video tutorial](https://www.youtube.com/watch?v=dG5I9qWDbQE) to add your repos to Bitrise.
+3. Configure your repo's Bitrise triggers to run the build (upon push / pull request / tag) as required. The target workflow should be `primary`.
 
-7. Create a `.coveralls.yml` file with this token.
+### Creating a PR with new commits
+These instructions assume that you have these tools as dependencies to your project.
+- [`jest`](https://www.npmjs.com/package/jest) : testing the code and generating test reports
+- [`coveralls`](https://www.npmjs.com/package/coveralls) : uploading test reports to coveralls.io.
 
-	> Replace `<YOUR_COVERALLS_REPO_TOKEN>` with... your Coveralls repo token.
+1. Clone your repo.
+   ```bash
+   git clone git@github.com:<GITHUB_USERNAME>/<GITHUB_REPONAME>.git
+   # or
+   git clone https://github.com/<GITHUB_USERNAME>/<GITHUB_REPONAME>.git
+   ```
+   > If you prefer to not fork this repo, you may create your own, but take note of the minimum Node dependencies above.
+2. Install its dependencies.
+   ```bash
+   yarn
+   ```
+3. Make changes.
+4. Run tests to make sure that your code doesn't fail.
+   ```bash
+   yarn test
+   ```
 
-	```bash
-	echo "service_name: bitrise" >> .coveralls.yml
-	echo "repo_token: <YOUR_COVERALLS_REPO_TOKEN>" >> .coveralls.yml
-	```
-
-	> **[!NOTE]** You may also forgo this step if you prefer to create this file in the Bitrise script step setup below.
-
-8. Run the repo's tests.
-
-	```bash
-	yarn test
-	```
-
-9. Upload the test results to your Coveralls dashboard.
-
-	```bash
-	yarn coveralls
-	# or
-	cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
-	```
-
-10. Connect to [Bitrise](https://app.bitrise.io/users/sign_in), preferrably with your GitHub account.
-11. Follow the steps outlined in [this video tutorial](https://www.youtube.com/watch?v=dG5I9qWDbQE) to add your repo to Bitrise.
-12. Visit your repo on Bitrise.
-13. Switch over to the **Workflows** tab.
-14. Set a script up on the "primary" workflow just before `test` "Run yarn command" step.
-
-	```bash
-	#!/usr/bin/env bash
-	set -e
-	set -x
-
-	echo "Setting the coveralls repo token..."
-	echo "git_branch: $BITRISE_GIT_BRANCH" >> .coveralls.yml
-
-	# Add the following lines if you skipped step 7.
-	echo "repo_token: $COVERALLS_REPO_TOKEN" >> .coveralls.yml
-	echo "service_name: bitrise" >> .coveralls.yml
-	```
-
-15. Save your workflow.
-16. Switch over to the **Secrets** tab and add your Coveralls repo token if you've skipped step 7. Create the following:
-
-	> Replace `<YOUR_COVERALLS_REPO_TOKEN>` with... your Coveralls repo token.
-
-    COVERALLS_REPO_TOKEN = `<YOUR_COVERALLS_REPO_TOKEN>`
-
-	Slide the **Expose for Pull Requests?** option to the right if you also plan to apply Bitrise builds to GitHub pull requests.
-
-## To-dos
-
-* [x] ~~Instructions to integrate the repo with Bitrise CI/CD.~~
-* [x] Instructions to integrate the repo with Coveralls bot after CI/CD build succeeds.
+The following instructions assumes that you use other CI integration besides Bitrise, or when you choose to upload test reports manually.
+1. *(optional)* Create a **.coveralls.yml** file using [.coveralls.example.yml](.coveralls.example.yml) as reference. Replace `<REPO_TOKEN_HASH_KEY>` accordingly.
+2. *(optional)* Upload your local test results to Coveralls for immediate reports. See [package.json](package.json) for reference.
+   ```bash
+   yarn coverage
+   ```
