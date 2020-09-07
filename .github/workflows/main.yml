@@ -16,12 +16,10 @@ jobs:
       with:
         node-version: 10.x
 
-    - name: npm install, make test-coverage
+    - name: yarn, yarn test, yarn coveralls
       run: |
-        export COVERALLS_REPO_TOKEN=hcRtRMzIvnvMU3VXiH0WQMOzcrpou2QEg 
         yarn
         yarn test
-        yarn coveralls
 
     - name: Coveralls
       uses: coverallsapp/github-action@master
